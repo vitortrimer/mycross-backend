@@ -1,9 +1,7 @@
-const { __prod__ } = require("./constants");
-import { MikroORM } from '@mikro-orm/core';
+import { User } from "./entities/user";
+import { __prod__ } from "./constants";
+import { MikroORM } from "@mikro-orm/core"
 import path from 'path'
-
-// Entities
-import { User } from './entities/user';
 
 export default {
   migrations: {

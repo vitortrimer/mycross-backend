@@ -1,30 +1,36 @@
-import "reflect-metadata";
-import { __prod__ } from "./constants";
-import mikroConfig from "./mikro-orm.config";
+import { MikroORM } from "@mikro-orm/core";
+import { ApolloServer } from "apollo-server-express";
+import {buildSchema} from 'type-graphql'
 import express from "express";
-import { MikroORM, RequestContext } from "@mikro-orm/core";
+import cors from 'cors'
+
+import mikroConfig from "./mikro-orm.config";
+import { __prod__ } from "./constants";
+import "reflect-metadata";
+import { UserResolver } from "./resolvers/user";
 
 const main = async () => {
   const orm = await MikroORM.init(mikroConfig)
   await orm.getMigrator().up()
   
   const app = express()
+
+  app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+  }))
   
   
-  app.use((_req, _res, next) => {
-    RequestContext.create(orm.em, next);
-  });
-
-
-  app.get("/", (_req, res) => {
-    orm.em
-    res.status(200).send({ success: true, message: "This is where it all starts!!!" })
-  });
-
-  app.post("/user", async (req, res) => {
-    res.status(200).send({ success: true, message: "This is where it all starts!!!" });
+  const apolloServer = new ApolloServer({
+    schema: await buildSchema({
+      resolvers: [UserResolver],
+      validate: false
+    }),
+    context: ({req, res}) => ({ em: orm.em, req, res })
   })
-
+  
+  
+  apolloServer.applyMiddleware({ app, cors: {origin: false} })
   app.listen(4000, () => {
     console.log('Server started on localhost:4000')
   })
